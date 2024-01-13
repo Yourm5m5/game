@@ -1,0 +1,109 @@
+
+class Game {
+    constructor() {
+        this.engine = Matter.Engine.create();
+        this.runner = Matter.Runner.create();
+        this.world = this.engine.world;
+        this.bodies = [];
+
+        // Initialize the game
+        this.init();
+    }
+
+    init() {
+        // Create the canvas
+        this.canvas = document.createElement('canvas');
+        this.context = this.canvas.getContext('2d');
+        document.body.appendChild(this.canvas);
+
+        // Set up Matter.js physics
+        Matter.Runner.run(this.runner, this.engine);
+        this.runner.isFixed = true;
+
+        // Create the player's ball
+        this.player = new Ball(100, 100, 20);
+
+        // Create obstacles
+        this.createObstacles();
+
+        // Set up event listeners
+        this.setupEvents();
+
+        // Update the game loop
+        this.update();
+    }
+
+    createObstacles() {
+        // Create some obstacles
+        for (let i = 0; i < 5; i++) {
+            const obstacle = new Obstacle(Math.random() * 800, Math.random() * 600, Math.random() * 30 + 20);
+            this.bodies.push(obstacle.body);
+        }
+
+        // Add all bodies to the world
+        Matter.World.add(this.world, this.bodies);
+    }
+
+    setupEvents() {
+        // Handle key events for player control
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowUp') {
+                Matter.Body.applyForce(this.player.body, this.player.body.position, { x: 0, y: -0.05 });
+            } else if (event.key === 'ArrowDown') {
+                Matter.Body.applyForce(this.player.body, this.player.body.position, { x: 0, y: 0.05 });
+            } else if (event.key === 'ArrowLeft') {
+                Matter.Body.applyForce(this.player.body, this.player.body.position, { x: -0.05, y: 0 });
+            } else if (event.key === 'ArrowRight') {
+                Matter.Body.applyForce(this.player.body, this.player.body.position, { x: 0.05, y: 0 });
+            }
+        });
+    }
+
+    update() {
+        // Render the player's ball
+        this.player.render(this.context);
+
+        // Render obstacles
+        for (const obstacle of this.bodies) {
+            this.renderObstacle(this.context, obstacle);
+        }
+
+        // Request the next animation frame
+        requestAnimationFrame(() => this.update());
+    }
+
+    renderObstacle(context, body) {
+        context.fillStyle = '#333';
+        context.beginPath();
+        for (const vertex of body.vertices) {
+            context.lineTo(vertex.x, vertex.y);
+        }
+        context.closePath();
+        context.fill();
+    }
+}
+
+// Define the Ball class as a subclass of Matter.Body
+class Ball {
+    constructor(x, y, radius) {
+        this.body = Matter.Bodies.circle(x, y, radius, { friction: 0.5, restitution: 0.5 });
+        Matter.World.add(game.world, this.body);
+    }
+
+    render(context) {
+        context.fillStyle = '#3498db';
+        context.beginPath();
+        context.arc(this.body.position.x, this.body.position.y, this.body.circleRadius, 0, 2 * Math.PI);
+        context.fill();
+    }
+}
+
+// Define the Obstacle class as a subclass of Matter.Body
+class Obstacle {
+    constructor(x, y, size) {
+        this.body = Matter.Bodies.rectangle(x, y, size, size, { isStatic: true });
+    }
+}
+
+// Create an instance of the Game class
+const game = new Game();
